@@ -1,5 +1,7 @@
 manifest:
   remotes:
+    - name: mputz86
+      url-base: https://github.com/mputz86
     - name: zephyrproject-rtos
       url-base: https://github.com/zephyrproject-rtos
     - name: zmkfirmware
@@ -8,8 +10,8 @@ manifest:
       url-base: https://github.com/petejohanson
   projects:
     - name: zephyr
-      remote: petejohanson
-      revision: v3.5-device-power-management
+      remote: mputz86
+      revision: v3.5.0-zmk-fixes-power
       clone-depth: 1
       import:
         name-blocklist:
