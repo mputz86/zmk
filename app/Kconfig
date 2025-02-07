@@ -81,11 +81,14 @@ if ZMK_HID_REPORT_TYPE_HKRO
 
 config ZMK_HID_KEYBOARD_REPORT_SIZE
     int "# Keyboard Keys Reportable"
+    default 6
 
 endif # ZMK_HID_REPORT_TYPE_HKRO
 
 config ZMK_HID_CONSUMER_REPORT_SIZE
     int "# Consumer Keys Reportable"
+    default 6
+
 
 choice ZMK_HID_CONSUMER_REPORT_USAGES
     prompt "HID Report Type"
@@ -159,14 +162,17 @@ if ZMK_BLE
 config ZMK_BLE_EXPERIMENTAL_CONN
     bool "Experimental BLE connection changes"
     help
-      Enables settings that are planned to be default in future versions of ZMK
-      to improve connection stability.
+      Enables a combination of settings that are planned to be default in future versions of ZMK
+      to improve connection stability. This includes changes to timing on BLE pairing initiation,
+      restores use of the updated/new LLCP implementation, and disables 2M PHY support.
 
 config ZMK_BLE_EXPERIMENTAL_SEC
     bool "Experimental BLE security changes"
     imply BT_SMP_ALLOW_UNAUTH_OVERWRITE
     help
-      Enables security settings that are planned to be officially supported in the future.
+      Enables a combination of settings that are planned to be officially supported in the future.
+      This includes enabling BT Secure Connection passkey entry, and allows overwrite of keys from
+      previously paired hosts.
 
 config ZMK_BLE_EXPERIMENTAL_FEATURES
     bool "Experimental BLE connection and security settings/features"
@@ -281,51 +287,74 @@ menuconfig ZMK_RGB_UNDERGLOW
 
 if ZMK_RGB_UNDERGLOW
 
+# This default value cuts down on tons of excess .conf files, if you're using GPIO, manually disable this
+config SPI
+    default y
+
+
+config ZMK_RGB_UNDERGLOW_DEFAULT_POWER_DOMAIN
+    bool "Auto-assign the RGB underglow to the default power domain"
+    default y
+    depends on ZMK_POWER_DOMAINS_DYNAMIC_DEFAULT
+
 config ZMK_RGB_UNDERGLOW_EXT_POWER
     bool "RGB underglow toggling also controls external power"
+    default y
+    depends on !ZMK_POWER_DOMAINS
 
 config ZMK_RGB_UNDERGLOW_BRT_MIN
     int "RGB underglow minimum brightness in percent"
     range 0 100
+    default 0
 
 config ZMK_RGB_UNDERGLOW_BRT_MAX
     int "RGB underglow maximum brightness in percent"
     range ZMK_RGB_UNDERGLOW_BRT_MIN 100
+    default 100
 
 config ZMK_RGB_UNDERGLOW_HUE_STEP
     int "RGB underglow hue step in degrees"
     range 0 359
+    default 10
 
 config ZMK_RGB_UNDERGLOW_SAT_STEP
     int "RGB underglow saturation step in percent"
     range 0 100
+    default 10
 
 config ZMK_RGB_UNDERGLOW_BRT_STEP
     int "RGB underglow brightness step in percent"
     range 0 100
+    default 10
 
 config ZMK_RGB_UNDERGLOW_HUE_START
     int "RGB underglow start hue value in degrees"
     range 0 359
+    default 0
 
 config ZMK_RGB_UNDERGLOW_SAT_START
     int "RGB underglow start saturations value in percent"
     range 0 100
+    default 100
 
 config ZMK_RGB_UNDERGLOW_BRT_START
     int "RGB underglow start brightness value in percent"
     range ZMK_RGB_UNDERGLOW_BRT_MIN ZMK_RGB_UNDERGLOW_BRT_MAX
+    default ZMK_RGB_UNDERGLOW_BRT_MAX
 
 config ZMK_RGB_UNDERGLOW_SPD_START
     int "RGB underglow start animation speed value"
     range 1 5
+    default 3
 
 config ZMK_RGB_UNDERGLOW_EFF_START
     int "RGB underglow start effect int value related to the effect enum list"
     range 0 3
+    default 0
 
 config ZMK_RGB_UNDERGLOW_ON_START
     bool "RGB underglow starts on by default"
+    default y
 
 config ZMK_RGB_UNDERGLOW_AUTO_OFF_IDLE
     bool "Turn off RGB underglow when keyboard goes into idle state"
@@ -345,13 +374,16 @@ if ZMK_BACKLIGHT
 config ZMK_BACKLIGHT_BRT_STEP
     int "Brightness step in percent"
     range 1 100
+    default 20
 
 config ZMK_BACKLIGHT_BRT_START
     int "Default brightness in percent"
     range 1 100
+    default 40
 
 config ZMK_BACKLIGHT_ON_START
     bool "Default backlight state"
+    default y
 
 config ZMK_BACKLIGHT_AUTO_OFF_IDLE
     bool "Turn off backlight when keyboard goes into idle state"
@@ -397,21 +429,37 @@ config ZMK_SLEEP
     depends on HAS_POWEROFF
     select POWEROFF
     select ZMK_PM_DEVICE_SUSPEND_RESUME
+    select PM_DEVICE
     imply USB
-
-if ZMK_SLEEP
-
-config PM_DEVICE
-    default y
 
 config ZMK_IDLE_SLEEP_TIMEOUT
     int "Milliseconds of inactivity before entering deep sleep"
+    depends on ZMK_SLEEP
     default 900000
 
-endif # ZMK_SLEEP
+config ZMK_POWER_DOMAINS
+    bool "Enable automatic power domain handling"
+    default n
+    select PM_DEVICE
+    select PM_DEVICE_POWER_DOMAIN
+    select PM_DEVICE_RUNTIME
+    select POWER_DOMAIN
+    select POWER_DOMAIN_GPIO
+
+config ZMK_POWER_DOMAINS_DYNAMIC_DEFAULT
+    bool "Enable assigning peripherals to the chosen default power domain"
+    default n
+    depends on ZMK_POWER_DOMAINS
+    select PM_DEVICE_POWER_DOMAIN_DYNAMIC
+    select DEVICE_DEPS_DYNAMIC
+
+# Default this to 2, the most common scenario for this for ZMK is RGB + OLED
+config PM_DEVICE_POWER_DOMAIN_DYNAMIC_NUM
+    default 2
 
 config ZMK_EXT_POWER
     bool "Enable support to control external power output"
+    default y if !ZMK_POWER_DOMAINS
 
 config ZMK_PM
     bool
